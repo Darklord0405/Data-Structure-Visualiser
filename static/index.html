@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>DSA Visualizer</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+  </head>
+  <body>
+    <h1>DSA Visualizer</h1>
+
+    <div class="menu">
+      <label>Select Data Structure: </label>
+      <select id="dsSelect" onchange="selectDS()">
+        <option value="">--Choose--</option>
+        <option value="linkedlist">Linked List</option>
+        <option value="stack">Stack</option>
+        <option value="queue">Queue</option>
+        <option value="tree">Binary Tree</option>
+        <!-- Future: Trees, Graphs -->
+      </select>
+    </div>
+
+    <div id="controls" style="margin-top: 20px"></div>
+    <svg id="visualization" width="900" height="300"></svg>
+
+    <script src="script.js"></script>
+  </body>
+</html>
