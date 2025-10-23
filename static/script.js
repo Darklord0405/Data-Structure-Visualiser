@@ -43,46 +43,88 @@ function renderControls() {
   controls.innerHTML = html;
 }
 
-// Clear SVG
+// Clear SVG with cleanup
 function clearVisualization() {
-  d3.select("#visualization").selectAll("*").remove();
+  const svg = d3.select("#visualization");
+  // Cancel any ongoing transitions
+  svg.selectAll("*").interrupt();
+  svg.selectAll("*").remove();
 }
 
 // Generic API call based on selected DS
 async function insertDS() {
-  const value = document.getElementById("valueInput").value;
-  if (!value) return;
-  let endpoint = "";
-  if (currentDS === "linkedlist") endpoint = "/linkedlist/insert";
-  if (currentDS === "stack") endpoint = "/stack/push";
-  if (currentDS === "queue") endpoint = "/queue/enqueue";
-  if (currentDS === "tree") endpoint = "/tree/insert";
+  try {
+    const value = document.getElementById("valueInput").value;
+    if (!value) {
+      throw new Error("Please enter a value");
+    }
 
-  const arr = await fetchAPI(endpoint, "POST", value);
-  renderDS(arr);
+    let endpoint = "";
+    if (currentDS === "linkedlist") endpoint = "/linkedlist/insert";
+    else if (currentDS === "stack") endpoint = "/stack/push";
+    else if (currentDS === "queue") endpoint = "/queue/enqueue";
+    else if (currentDS === "tree") endpoint = "/tree/insert";
+    else throw new Error("Invalid data structure selected");
+
+    const arr = await fetchAPI(endpoint, "POST", value);
+    await renderDS(arr);
+    document.getElementById("valueInput").value = ""; // Clear input after success
+  } catch (error) {
+    alert(error.message);
+  }
 }
 
 async function deleteDS() {
-  let value = document.getElementById("valueInput")?.value;
-  let endpoint = "";
-  if (currentDS === "linkedlist") endpoint = "/linkedlist/delete";
-  if (currentDS === "stack") endpoint = "/stack/pop";
-  if (currentDS === "queue") endpoint = "/queue/dequeue";
-  if (currentDS === "tree") return;  // Handled separately
+  try {
+    const value = document.getElementById("valueInput")?.value;
+    let endpoint = "";
+    
+    if (currentDS === "linkedlist") {
+      if (!value) throw new Error("Please enter a value to delete");
+      endpoint = "/linkedlist/delete";
+    } else if (currentDS === "stack") {
+      endpoint = "/stack/pop";
+    } else if (currentDS === "queue") {
+      endpoint = "/queue/dequeue";
+    } else if (currentDS === "tree") {
+      if (!value) throw new Error("Please enter a value to delete");
+      endpoint = "/tree/delete";
+    }
 
-  const arr = await fetchAPI(endpoint, "POST", value);
-  renderDS(arr);
+    if (!endpoint) throw new Error("Invalid data structure selected");
+
+    const arr = await fetchAPI(endpoint, "POST", value);
+    renderDS(arr);
+    
+    // Clear input after successful operation
+    if (currentDS === "linkedlist" || currentDS === "tree") {
+      document.getElementById("valueInput").value = "";
+    }
+  } catch (error) {
+    alert(error.message);
+  }
 }
 
 // Fetch API helper
 async function fetchAPI(endpoint, method, value) {
-  const body = value !== undefined ? { value } : undefined;
-  const res = await fetch(API + endpoint, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: body && JSON.stringify(body)
-  });
-  return await res.json();
+  try {
+    const body = value !== undefined ? { value } : undefined;
+    const res = await fetch(API + endpoint, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: body && JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || `HTTP error! status: ${res.status}`);
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error("API call failed:", error);
+    throw error;
+  }
 }
 
 // Render data structure dynamically
@@ -279,15 +321,28 @@ function renderDS(arr) {
   }
 }
 
+// Valid traversal types
+const VALID_TRAVERSALS = ['inorder', 'preorder', 'postorder'];
+
 async function traverseTree(type) {
-  const res = await fetch(`${API}/tree/traverse/${type}`);
-  const order = await res.json();
-  highlightTraversal(order);
+  try {
+    if (!VALID_TRAVERSALS.includes(type)) {
+      throw new Error("Invalid traversal type");
+    }
+
+    const res = await fetchAPI(`/tree/traverse/${type}`, "GET");
+    await highlightTraversal(res);
+  } catch (error) {
+    alert(error.message);
+  }
 }
 
 function highlightTraversal(order) {
   const svg = d3.select("#visualization");
   const nodes = svg.selectAll("circle");
+
+  // Cancel any ongoing transitions
+  nodes.interrupt();
 
   // Reset all colors
   nodes.transition().duration(300).attr("fill", "lightblue");
@@ -295,29 +350,24 @@ function highlightTraversal(order) {
   let delay = 0;
   order.forEach((val, i) => {
     const node = svg.selectAll("g.node").filter(d => d.data.name == val);
-    node.select("circle")
+    const circle = node.select("circle");
+    
+    // Cancel any existing transitions on this node
+    circle.interrupt();
+    
+    circle
       .transition()
       .delay(delay)
       .duration(500)
       .attr("fill", "orange")
       .transition()
       .delay(500)
+      .duration(500)
       .attr("fill", "lightblue");
+    
     delay += 1000; // 1 second per step
   });
 }
 
-async function deleteDS() {
-  const value = document.getElementById("valueInput").value;
-  if (!value) return alert("Enter a value to delete!");
 
-  const res = await fetch(`${API}/tree/delete`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ value }),
-  });
-
-  const data = await res.json();
-  renderDS(data);
-}
 
