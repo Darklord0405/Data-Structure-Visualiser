@@ -40,10 +40,11 @@ app.post("/queue/dequeue", (req, res) => {
   res.json(queue.dequeue());
 });
 
+// Tree Routes
 app.post("/tree/insert", (req, res) => {
   const treeData = tree.insert(req.body.value);
   res.json(treeData);
-})
+});
 
 app.post("/tree/delete", (req, res) => {
   const treeData = tree.delete(req.body.value);

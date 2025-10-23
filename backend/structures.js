@@ -1,5 +1,3 @@
-// backend/structures.js
-
 // Linked List Implementation
 class Node {
   constructor(value) {
@@ -88,8 +86,7 @@ class Queue {
   }
 }
 
-// Add at the bottom of structures.js
-
+// Binary Tree Implementation
 class TreeNode {
   constructor(value) {
     this.value = value;

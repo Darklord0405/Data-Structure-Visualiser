@@ -68,7 +68,7 @@ async function deleteDS() {
   if (currentDS === "linkedlist") endpoint = "/linkedlist/delete";
   if (currentDS === "stack") endpoint = "/stack/pop";
   if (currentDS === "queue") endpoint = "/queue/dequeue";
-  if (currentDS === "tree") return; // No delete for tree 
+  if (currentDS === "tree") return;  // Handled separately
 
   const arr = await fetchAPI(endpoint, "POST", value);
   renderDS(arr);
